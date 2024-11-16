@@ -4,6 +4,7 @@ import html
 import json
 import os
 import re
+import time
 
 from dotenv import find_dotenv, load_dotenv
 from IPython.display import HTML, display
@@ -131,3 +132,75 @@ def format_json(json_str):
         return formatted
     except json.JSONDecodeError:
         return html.escape(json_str)
+
+
+# Memory management functions
+
+class Memory:
+    def __init__(self, content, importance, timestamp=None):
+        self.content = content
+        self.importance = importance
+        self.timestamp = timestamp or time.time()
+
+    def __repr__(self):
+        return f"Memory(content={self.content}, importance={self.importance}, timestamp={self.timestamp})"
+
+
+class MemoryManager:
+    def __init__(self):
+        self.short_term_memory = []
+        self.long_term_memory = []
+        self.episodic_memory = []
+
+    def add_memory(self, memory, category):
+        if category == "short_term":
+            self.short_term_memory.append(memory)
+        elif category == "long_term":
+            self.long_term_memory.append(memory)
+        elif category == "episodic":
+            self.episodic_memory.append(memory)
+
+    def prioritize_memories(self):
+        self.short_term_memory.sort(key=lambda x: x.importance, reverse=True)
+        self.long_term_memory.sort(key=lambda x: x.importance, reverse=True)
+        self.episodic_memory.sort(key=lambda x: x.importance, reverse=True)
+
+    def decay_memories(self, decay_rate=0.01):
+        current_time = time.time()
+        for memory in self.short_term_memory:
+            memory.importance -= decay_rate * (current_time - memory.timestamp)
+        for memory in self.long_term_memory:
+            memory.importance -= decay_rate * (current_time - memory.timestamp)
+        for memory in self.episodic_memory:
+            memory.importance -= decay_rate * (current_time - memory.timestamp)
+
+        self.short_term_memory = [m for m in self.short_term_memory if m.importance > 0]
+        self.long_term_memory = [m for m in self.long_term_memory if m.importance > 0]
+        self.episodic_memory = [m for m in self.episodic_memory if m.importance > 0]
+
+    def get_memories(self, category):
+        if category == "short_term":
+            return self.short_term_memory
+        elif category == "long_term":
+            return self.long_term_memory
+        elif category == "episodic":
+            return self.episodic_memory
+
+
+# Example usage
+if __name__ == "__main__":
+    memory_manager = MemoryManager()
+
+    memory1 = Memory("Learned about AI", 10)
+    memory2 = Memory("Had lunch", 5)
+    memory3 = Memory("Went for a walk", 7)
+
+    memory_manager.add_memory(memory1, "short_term")
+    memory_manager.add_memory(memory2, "long_term")
+    memory_manager.add_memory(memory3, "episodic")
+
+    memory_manager.prioritize_memories()
+    print("Prioritized Memories:", memory_manager.get_memories("short_term"))
+
+    memory_manager.decay_memories()
+    print("Memories after decay:", memory_manager.get_memories("short_term"))
